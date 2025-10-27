@@ -1,0 +1,41 @@
+uky_utm.settings:
+  type: config_object
+  label: 'UKY UTM settings'
+  mapping:
+    cookie_name:
+      type: string
+      label: 'Cookie name'
+    ttl_minutes:
+      type: integer
+      label: 'Cookie TTL (minutes)'
+    landing_mode:
+      type: string
+      label: 'Landing page mode'
+    debug:
+      type: boolean
+      label: 'Enable console debug'
+    referrer_enabled:
+      type: boolean
+      label: 'Assign Traffic Referrer'
+    referrer_attribute_name:
+      type: string
+      label: 'Referrer attribute name'
+    referrer_attribute_value:
+      type: string
+      label: 'Referrer attribute value'
+    mappings:
+      type: sequence
+      label: 'Mappings'
+      sequence:
+        type: mapping
+        label: 'Mapping'
+        mapping:
+          utm_key:
+            type: string
+            label: 'UTM key'
+          attribute_name:
+            type: string
+            label: 'Attribute name'
+          attribute_value:
+            type: string
+            label: 'Attribute value'

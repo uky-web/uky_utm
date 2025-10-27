@@ -1,0 +1,7 @@
+uky_utm.settings:
+  path: '/admin/config/system/uky-utm'
+  defaults:
+    _form: '\Drupal\uky_utm\Form\UtmSettingsForm'
+    _title: 'UKY UTM settings'
+  requirements:
+    _permission: 'administer site configuration'

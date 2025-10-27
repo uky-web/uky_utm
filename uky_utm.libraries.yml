@@ -1,0 +1,14 @@
+utm:
+  version: 1.x
+  js:
+    js/utm.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings
+
+admin:
+  version: 1.x
+  js:
+    js/admin.js: {}
+  dependencies:
+    - core/drupal

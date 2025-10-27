@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * @file
+ * Attach JS and pass settings for UKY UTM.
+ */
+
+/**
+ * Implements hook_page_attachments().
+ */
+function uky_utm_page_attachments(array &$attachments) {
+  $config = \Drupal::config('uky_utm.settings');
+
+  $cookie_name = $config->get('cookie_name') ?: 'utm_session';
+  $ttl_minutes = (int) ($config->get('ttl_minutes') ?? 30);
+  $landing_mode = $config->get('landing_mode') ?: 'absolute';
+  $debug = (bool) ($config->get('debug') ?? TRUE);
+
+  // Build simplified mappings (always overwrite).
+  $raw_mappings = $config->get('mappings') ?: [];
+  $mappings = [];
+  foreach ($raw_mappings as $row) {
+    if (empty($row['utm_key']) || empty($row['attribute_value'])) {
+      continue;
+    }
+    $attr_name = $row['attribute_name'] ?: 'id';
+    $mappings[] = [
+      'utm_key' => trim($row['utm_key']),
+      'attribute_name' => trim($attr_name),
+      'attribute_value' => trim($row['attribute_value']),
+    ];
+  }
+
+  // Referrer config.
+  $ref_enabled = (bool) ($config->get('referrer_enabled') ?? FALSE);
+  $ref_attr_name = $config->get('referrer_attribute_name') ?: '';
+  $ref_attr_value = $config->get('referrer_attribute_value') ?: '';
+
+  $attachments['#attached']['library'][] = 'uky_utm/utm';
+  $attachments['#attached']['drupalSettings']['uky_utm'] = [
+    'cookieName' => $cookie_name,
+    'ttlMinutes' => $ttl_minutes,
+    'landingMode' => $landing_mode,
+    'debug' => $debug,
+    'mappings' => $mappings,
+    'referrer' => [
+      'enabled' => $ref_enabled,
+      'attribute_name' => $ref_attr_name,
+      'attribute_value' => $ref_attr_value,
+    ],
+  ];
+}

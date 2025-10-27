@@ -1,0 +1,6 @@
+name: UKY UTM
+type: module
+description: "Capture UTM session data and map it to form fields by attribute."
+package: "UKY"
+core_version_requirement: ^10 || ^11
+configure: uky_utm.settings
