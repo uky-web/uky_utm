@@ -1,0 +1,6 @@
+services:
+  uky_utm.capture_subscriber:
+    class: Drupal\uky_utm\EventSubscriber\UtmCaptureSubscriber
+    arguments: ['@datetime.time']
+    tags:
+      - { name: event_subscriber }

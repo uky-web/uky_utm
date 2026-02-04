@@ -1,6 +1,0 @@
-uky_utm.settings:
-  title: 'UKY UTM'
-  description: 'Configure UTM → form field mappings and referrer assignment.'
-  route_name: uky_utm.settings
-  parent: system.admin_config_system
-  weight: 90

@@ -1,52 +1,138 @@
 <?php
 
-/**
- * @file
- * Attach JS and pass settings for UKY UTM.
- */
+use Drupal\Core\Render\BubbleableMetadata;
 
 /**
- * Implements hook_page_attachments().
+ * Registers a list of tokens to be used by this module.
+ *
+ * Implements hook_token_info().
+ *
+ * @return array
  */
-function uky_utm_page_attachments(array &$attachments) {
-  $config = \Drupal::config('uky_utm.settings');
+function uky_utm_token_info() {
+  $token_info = [
+    'types' => [
+      'uky_utm' => [
+        'name' => t('UKY UTM'),
+        'description' => t('UTM parameters captured from visitor query strings.'),
+      ],
+    ],
 
-  $cookie_name = $config->get('cookie_name') ?: 'utm_session';
-  $ttl_minutes = (int) ($config->get('ttl_minutes') ?? 30);
-  $landing_mode = $config->get('landing_mode') ?: 'absolute';
-  $debug = (bool) ($config->get('debug') ?? TRUE);
-
-  // Build simplified mappings (always overwrite).
-  $raw_mappings = $config->get('mappings') ?: [];
-  $mappings = [];
-  foreach ($raw_mappings as $row) {
-    if (empty($row['utm_key']) || empty($row['attribute_value'])) {
-      continue;
-    }
-    $attr_name = $row['attribute_name'] ?: 'id';
-    $mappings[] = [
-      'utm_key' => trim($row['utm_key']),
-      'attribute_name' => trim($attr_name),
-      'attribute_value' => trim($row['attribute_value']),
-    ];
-  }
-
-  // Referrer config.
-  $ref_enabled = (bool) ($config->get('referrer_enabled') ?? FALSE);
-  $ref_attr_name = $config->get('referrer_attribute_name') ?: '';
-  $ref_attr_value = $config->get('referrer_attribute_value') ?: '';
-
-  $attachments['#attached']['library'][] = 'uky_utm/utm';
-  $attachments['#attached']['drupalSettings']['uky_utm'] = [
-    'cookieName' => $cookie_name,
-    'ttlMinutes' => $ttl_minutes,
-    'landingMode' => $landing_mode,
-    'debug' => $debug,
-    'mappings' => $mappings,
-    'referrer' => [
-      'enabled' => $ref_enabled,
-      'attribute_name' => $ref_attr_name,
-      'attribute_value' => $ref_attr_value,
+    'tokens' => [
+      'uky_utm' => [
+        'source' => [
+          'name' => t('UTM source'),
+          'description' => t('Value of the utm_source parameter.'),
+        ],
+        'medium' => [
+          'name' => t('UTM medium'),
+          'description' => t('Value of the utm_medium parameter.'),
+        ],
+        'campaign' => [
+          'name' => t('UTM campaign'),
+          'description' => t('Value of the utm_campaign parameter.'),
+        ],
+        'content' => [
+          'name' => t('UTM content'),
+          'description' => t('Value of the utm_content parameter.'),
+        ],
+        'term' => [
+          'name' => t('UTM term'),
+          'description' => t('Value of the utm_term parameter.'),
+        ],
+        'utm-string' => [
+          'name' => t('UTM string'),
+          'description' => t('Concatenated UTM query string captured for the visitor.'),
+        ],
+        'landing-url' => [
+          'name' => t('Landing URL'),
+          'description' => t('Full URL where the UTM parameters were captured.'),
+        ],
+        'query-string' => [
+          'name' => t('Query string'),
+          'description' => t('Full query string present when the UTM parameters were captured.'),
+        ],
+        'captured' => [
+          'name' => t('Captured timestamp'),
+          'description' => t('Unix timestamp for when the UTM values were stored.'),
+        ],
+        'all' => [
+          'name' => t('All values'),
+          'description' => t('JSON encoded object containing every captured UTM value.'),
+        ],
+      ],
     ],
   ];
+
+  return $token_info;
+}
+
+/**
+ * Generate replacements for defined tokens.
+ *
+ * Implements hook_tokens().
+ *
+ * @param  string             $type
+ * @param  array              $tokens
+ * @param  array              $data
+ * @param  array              $options
+ * @param  BubbleableMetadata $metadata
+ * @return array
+ */
+function uky_utm_tokens(string $type, array $tokens, array $data, array $options, BubbleableMetadata $metadata): array {
+  $metadata->addCacheContexts(['session']);
+  $replacements = [];
+  $utm_service = \Drupal::service('uky_utm.capture_subscriber');
+
+  if ($type === 'uky_utm') {
+    foreach ($tokens as $name => $original) {
+      switch($name) {
+        case 'source':
+        case 'medium':
+        case 'campaign':
+        case 'content':
+        case 'term':
+          $replacements[$original] = $utm_service->getUtmValue($name);
+          break;
+
+        case 'utm-string':
+          $replacements[$original] = $utm_service->getUtmValue('utm_string');
+          break;
+
+        case 'landing-url':
+          $replacements[$original] = $utm_service->getUtmValue('landing_url');
+          break;
+
+        case 'query-string':
+          $replacements[$original] = $utm_service->getUtmValue('query_string');
+          break;
+
+        case 'captured':
+          $replacements[$original] = $utm_service->getUtmValue('captured');
+          break;
+
+        case 'all':
+          $replacements[$original] = json_encode($utm_service->getAllUtmValues());
+          break;
+      }
+    }
+  }
+
+  return $replacements;
+}
+
+/**
+ * Pass stored UTM params to JS for use as needed.
+ *
+ * Implements hook_preprocess_node()
+ *
+ * @param  array  &$variables
+ * @return void
+ */
+function uky_utm_page_attachments(array &$variables): void {
+  $utm_service = \Drupal::service('uky_utm.capture_subscriber');
+  $node = $variables['node'];
+
+  $variables['#attached']['library'][] = 'uky_utm/utm_tokens';
+  $variables['#attached']['drupalSettings']['utmSession'] = $utm_service->getAllUtmValues();
 }
