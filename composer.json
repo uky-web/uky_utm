@@ -3,7 +3,7 @@
   "description": "UKY UTM Module",
   "license": "MIT",
   "type": "uky-web-module",
-  "version": "3.16.2",
+  "version": "3.16.3",
   "support": {
     "source": "https://github.com/uky-web/uky_utm"
   },
